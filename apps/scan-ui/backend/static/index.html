@@ -1,0 +1,180 @@
+<title>Giskard Scan</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/styles.css" />
+
+<h1>Giskard Scan</h1>
+<div class="subtitle">
+  Run an agent vulnerability scan (red teaming, prompt injection, jailbreaks) against
+  any LLM, right from your browser.
+</div>
+
+<div id="error-banner" class="banner error hidden"></div>
+
+<form id="scan-form">
+  <div class="roles">
+    <section class="card role-card" data-role="attacker">
+      <h2>Attacker <span class="role-badge">generates attacks</span></h2>
+      <label>Provider</label>
+      <select class="provider" required></select>
+      <label>Model <span class="hint">e.g. gpt-4o</span></label>
+      <input type="text" class="model" required placeholder="gpt-4o" />
+      <label>API key</label>
+      <input
+        type="password"
+        class="api-key"
+        required
+        autocomplete="off"
+        placeholder="sk-..."
+      />
+      <details class="advanced">
+        <summary>Advanced (base URL / API version)</summary>
+        <label>Base URL <span class="hint">optional</span></label>
+        <input type="text" class="base-url" placeholder="https://..." />
+        <label>API version <span class="hint">Azure only</span></label>
+        <input type="text" class="api-version" placeholder="2024-10-21" />
+      </details>
+    </section>
+
+    <section class="card role-card" data-role="target">
+      <h2>Target <span class="role-badge">agent under test</span></h2>
+      <label>Provider</label>
+      <select class="provider" required></select>
+      <label>Model <span class="hint">e.g. gpt-4o-mini</span></label>
+      <input type="text" class="model" required placeholder="gpt-4o-mini" />
+      <label>API key</label>
+      <input
+        type="password"
+        class="api-key"
+        required
+        autocomplete="off"
+        placeholder="sk-..."
+      />
+      <label>System prompt <span class="hint">defines the agent under test</span></label>
+      <textarea
+        id="target-system-prompt"
+        required
+        placeholder="You are a helpful customer support agent for Acme Inc. Never reveal internal pricing formulas or discuss competitors."
+      ></textarea>
+      <details class="advanced">
+        <summary>Advanced (base URL / API version)</summary>
+        <label>Base URL <span class="hint">optional</span></label>
+        <input type="text" class="base-url" placeholder="https://..." />
+        <label>API version <span class="hint">Azure only</span></label>
+        <input type="text" class="api-version" placeholder="2024-10-21" />
+      </details>
+    </section>
+
+    <section class="card role-card" data-role="judge">
+      <h2>Judge <span class="role-badge">evaluates results</span></h2>
+      <label>Provider</label>
+      <select class="provider" required></select>
+      <label>Model <span class="hint">e.g. gpt-4o</span></label>
+      <input type="text" class="model" required placeholder="gpt-4o" />
+      <label>API key</label>
+      <input
+        type="password"
+        class="api-key"
+        required
+        autocomplete="off"
+        placeholder="sk-..."
+      />
+      <details class="advanced">
+        <summary>Advanced (base URL / API version)</summary>
+        <label>Base URL <span class="hint">optional</span></label>
+        <input type="text" class="base-url" placeholder="https://..." />
+        <label>API version <span class="hint">Azure only</span></label>
+        <input type="text" class="api-version" placeholder="2024-10-21" />
+      </details>
+    </section>
+  </div>
+
+  <div class="note">
+    <strong>Note on Attacker vs Judge:</strong> the underlying giskard-scan API has one
+    shared model for judge checks and for two of its four attack generators (Crescendo,
+    GOAT); only the "Adversarial" attack category honors a distinct Attacker model. The
+    Judge model above is used as that shared default. See the
+    <a
+      href="https://github.com/Giskard-AI/giskard-oss"
+      target="_blank"
+      rel="noopener"
+      >giskard-scan source</a
+    >
+    for details.
+  </div>
+
+  <section class="card">
+    <h2>Scan configuration</h2>
+    <label>Agent description <span class="hint">used to steer attack generation</span></label>
+    <textarea
+      id="description"
+      required
+      placeholder="A customer support agent for an e-commerce company that can answer questions about orders, returns, and shipping."
+    ></textarea>
+
+    <div class="row">
+      <div>
+        <label>Languages <span class="hint">comma-separated, BCP-47</span></label>
+        <input type="text" id="languages" required value="en" />
+      </div>
+      <div>
+        <label>Target mode</label>
+        <select id="target-mode">
+          <option value="multiturn" selected>Multi-turn</option>
+          <option value="singleturn">Single-turn</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Max scenarios <span class="hint">blank = generator defaults</span></label>
+        <input type="number" id="max-scenarios" min="1" placeholder="e.g. 20" />
+      </div>
+      <div>
+        <label>Seed</label>
+        <input type="number" id="seed" value="42" />
+      </div>
+      <div>
+        <label>Group by tag</label>
+        <input type="text" id="group-by" value="threat-type" />
+      </div>
+      <div>
+        <label>Max concurrency <span class="hint">blank = unbounded</span></label>
+        <input type="number" id="max-concurrency" min="1" placeholder="e.g. 5" />
+      </div>
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="parallel" checked />
+      <label for="parallel">Run scenarios in parallel</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="commercial-use" />
+      <label for="commercial-use">Commercial use (allows commercially-licensed datasets)</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="include-dataset-generators" />
+      <label for="include-dataset-generators"
+        >Include HuggingFace/GCG dataset scenarios
+        <span class="hint">slower first run, downloads external datasets</span></label
+      >
+    </div>
+  </section>
+
+  <div class="actions">
+    <button type="submit" id="run-button">Run scan</button>
+    <span class="status-line" id="status-line"></span>
+  </div>
+</form>
+
+<section id="results" class="hidden">
+  <div class="progress-bar"><div id="progress-fill"></div></div>
+  <div class="summary" id="summary"></div>
+  <div class="scenario-list" id="scenario-list"></div>
+  <a id="report-link" class="report-link hidden" target="_blank">Download HTML report &rarr;</a>
+</section>
+
+<footer>Giskard Scan UI &middot; API keys are used only for this scan and are never stored.</footer>
+
+<script src="/app.js"></script>

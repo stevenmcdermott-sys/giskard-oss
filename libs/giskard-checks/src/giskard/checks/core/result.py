@@ -601,6 +601,21 @@ class SuiteResult(BaseResult, frozen=True):
 
         return to_junit_xml(self, path=path)
 
+    def to_html(
+        self,
+        path: str | Path | None = None,
+        *,
+        group_by: str | None = None,
+        title: str = "Giskard Suite Report",
+    ) -> str:
+        """Render this result as a self-contained static HTML report.
+
+        See :func:`giskard.checks.export.html.to_html` for details.
+        """
+        from ..export.html import to_html
+
+        return to_html(self, path=path, group_by=group_by, title=title)
+
     def to_hub_format(self) -> dict[str, Any]:
         """Convert the suite result into a JSON-serializable Giskard Hub payload.
 

@@ -1,0 +1,28 @@
+[project]
+name = "scan-ui-backend"
+version = "0.1.0"
+description = "Web UI backend for running giskard-scan vulnerability scans with configurable Attacker/Target/Judge LLMs"
+requires-python = ">=3.12"
+dependencies = [
+    "giskard-scan",
+    "giskard-checks",
+    "giskard-agents",
+    "giskard-llm[all]",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.12,<3",
+]
+
+[tool.uv.sources]
+giskard-core = { path = "../../../libs/giskard-core", editable = true }
+giskard-llm = { path = "../../../libs/giskard-llm", editable = true }
+giskard-agents = { path = "../../../libs/giskard-agents", editable = true }
+giskard-checks = { path = "../../../libs/giskard-checks", editable = true }
+giskard-scan = { path = "../../../libs/giskard-scan", editable = true }
+
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
